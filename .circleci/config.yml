@@ -1,12 +1,9 @@
-# File: .circleci/config.yml
-# Simple, reliable configuration for your Java Spring Boot + Docker project
-
+# Alternative: Even simpler using default machine executor
 version: 2.1
 
 jobs:
   build-and-push:
-    machine:
-      image: ubuntu-2004:202201-02
+    machine: true  # Uses default machine executor (free tier)
     steps:
       - checkout
       
@@ -15,8 +12,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y openjdk-8-jdk
-            echo 'export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64' >> $BASH_ENV
-            source $BASH_ENV
+            export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
             java -version
       
       - run:
@@ -25,7 +21,9 @@ jobs:
       
       - run:
           name: Build with Gradle
-          command: ./gradlew build
+          command: |
+            export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+            ./gradlew build
       
       - run:
           name: Show build artifacts
@@ -42,7 +40,6 @@ jobs:
             docker build -t minjun6251/test-project:$CIRCLE_SHA1 .
             docker push minjun6251/test-project:latest
             docker push minjun6251/test-project:$CIRCLE_SHA1
-            docker logout
 
 workflows:
   build-and-deploy:
