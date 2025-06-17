@@ -1,11 +1,61 @@
-# Alternative: Even simpler using default machine executor
+# Complete CircleCI configuration with debug and build jobs
 version: 2.1
 
 jobs:
-  build-and-push:
-    machine: true  # Uses default machine executor (free tier)
+  debug:
+    machine: true
     steps:
       - checkout
+      
+      - run:
+          name: Debug Docker credentials
+          command: |
+            echo "=== Environment Variables Debug ==="
+            echo "DOCKER_USERNAME: '${DOCKER_USERNAME}'"
+            echo "DOCKER_PASSWORD length: ${#DOCKER_PASSWORD}"
+            echo "DOCKER_USERNAME length: ${#DOCKER_USERNAME}"
+            echo "DOCKER_USERNAME preview: ${DOCKER_USERNAME:0:4}***"
+            
+            if [ -z "$DOCKER_USERNAME" ]; then
+              echo "❌ DOCKER_USERNAME is empty or not set!"
+            else
+              echo "✅ DOCKER_USERNAME is set"
+            fi
+            
+            if [ -z "$DOCKER_PASSWORD" ]; then
+              echo "❌ DOCKER_PASSWORD is empty or not set!"
+            else
+              echo "✅ DOCKER_PASSWORD is set"
+            fi
+            
+            echo "=== Testing Docker Login ==="
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            if [ $? -eq 0 ]; then
+              echo "✅ Docker login successful!"
+              docker logout
+            else
+              echo "❌ Docker login failed!"
+              exit 1
+            fi
+
+  build-and-push:
+    machine: true
+    steps:
+      - checkout
+      
+      - run:
+          name: Debug Docker credentials
+          command: |
+            echo "DOCKER_USERNAME length: ${#DOCKER_USERNAME}"
+            echo "DOCKER_PASSWORD length: ${#DOCKER_PASSWORD}"
+            echo "DOCKER_USERNAME preview: ${DOCKER_USERNAME:0:4}***"
+            
+            if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+              echo "❌ Missing Docker credentials!"
+              exit 1
+            else
+              echo "✅ Docker credentials found"
+            fi
       
       - run:
           name: Install Java 8
@@ -13,16 +63,13 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y openjdk-8-jdk
             export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+            echo 'export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64' >> $BASH_ENV
             java -version
-      
-      - run:
-          name: Grant execute permission for gradlew
-          command: chmod +x gradlew
       
       - run:
           name: Build with Gradle
           command: |
-            export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+            chmod +x gradlew
             ./gradlew build
       
       - run:
@@ -33,18 +80,43 @@ jobs:
             ls -la build/libs/
       
       - run:
-          name: Build and push Docker image
+          name: Login to Docker Hub
           command: |
+            echo "Logging into Docker Hub..."
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "✅ Docker login successful"
+      
+      - run:
+          name: Build Docker images
+          command: |
+            echo "Building Docker images..."
             docker build -t minjun6251/test-project:latest .
             docker build -t minjun6251/test-project:$CIRCLE_SHA1 .
+            echo "✅ Docker images built successfully"
+      
+      - run:
+          name: Push Docker images
+          command: |
+            echo "Pushing Docker images..."
             docker push minjun6251/test-project:latest
             docker push minjun6251/test-project:$CIRCLE_SHA1
+            echo "✅ Docker images pushed successfully"
+      
+      - run:
+          name: Docker logout
+          command: docker logout
+          when: always
 
 workflows:
-  build-and-deploy:
+  debug-and-build:
     jobs:
+      - debug:
+          filters:
+            branches:
+              only: master
       - build-and-push:
+          requires:
+            - debug
           filters:
             branches:
               only: master
