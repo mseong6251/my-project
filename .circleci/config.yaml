@@ -1,0 +1,53 @@
+# File: .circleci/config.yml
+# Simple, reliable configuration for your Java Spring Boot + Docker project
+
+version: 2.1
+
+jobs:
+  build-and-push:
+    machine:
+      image: ubuntu-2004:202201-02
+    steps:
+      - checkout
+      
+      - run:
+          name: Install Java 8
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y openjdk-8-jdk
+            echo 'export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64' >> $BASH_ENV
+            source $BASH_ENV
+            java -version
+      
+      - run:
+          name: Grant execute permission for gradlew
+          command: chmod +x gradlew
+      
+      - run:
+          name: Build with Gradle
+          command: ./gradlew build
+      
+      - run:
+          name: Show build artifacts
+          command: |
+            echo "JAR files created:"
+            find build/libs -name "*.jar" -type f
+            ls -la build/libs/
+      
+      - run:
+          name: Build and push Docker image
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            docker build -t minjun6251/test-project:latest .
+            docker build -t minjun6251/test-project:$CIRCLE_SHA1 .
+            docker push minjun6251/test-project:latest
+            docker push minjun6251/test-project:$CIRCLE_SHA1
+            docker logout
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - build-and-push:
+          filters:
+            branches:
+              only: master
