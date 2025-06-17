@@ -34,6 +34,37 @@ jobs:
         find build/libs -name "*.jar" -type f
         ls -la build/libs/
 
+     # ADD THESE DEBUG STEPS:
+    - name: Debug Docker secrets
+      run: |
+        echo "Docker username length: ${#DOCKER_USERNAME}"
+        echo "Docker password length: ${#DOCKER_PASSWORD}"
+        echo "Username preview: ${DOCKER_USERNAME:0:4}***"
+        if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+          echo "❌ Missing Docker credentials!"
+          exit 1
+        else
+          echo "✅ Docker credentials found"
+        fi
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Test Docker login manually
+      run: |
+        echo "Testing Docker Hub authentication..."
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        if [ $? -eq 0 ]; then
+          echo "✅ Manual Docker login successful!"
+          docker logout
+        else
+          echo "❌ Manual Docker login failed!"
+          exit 1
+        fi
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
     - name: Build and Push Docker Image
       uses: mr-smithers-excellent/docker-build-push@v4
       with:
