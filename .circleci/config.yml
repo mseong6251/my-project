@@ -1,6 +1,5 @@
 # Complete CircleCI configuration with debug and build jobs
 version: 2.1
-
 jobs:
   debug:
     machine: true
@@ -11,25 +10,25 @@ jobs:
           name: Debug Docker credentials
           command: |
             echo "=== Environment Variables Debug ==="
-            echo "DOCKER_USERNAME: '${DOCKER_USERNAME}'"
-            echo "DOCKER_PASSWORD length: ${#DOCKER_PASSWORD}"
-            echo "DOCKER_USERNAME length: ${#DOCKER_USERNAME}"
-            echo "DOCKER_USERNAME preview: ${DOCKER_USERNAME:0:4}***"
+            echo "DOCKER_USERNAME_CIRCLECI: '${DOCKER_USERNAME_CIRCLECI}'"
+            echo "DOCKER_PASSWORD_CIRCLECI length: ${#DOCKER_PASSWORD_CIRCLECI}"
+            echo "DOCKER_USERNAME_CIRCLECI length: ${#DOCKER_USERNAME_CIRCLECI}"
+            echo "DOCKER_USERNAME_CIRCLECI preview: ${DOCKER_USERNAME_CIRCLECI:0:4}***"
             
-            if [ -z "$DOCKER_USERNAME" ]; then
-              echo "❌ DOCKER_USERNAME is empty or not set!"
+            if [ -z "$DOCKER_USERNAME_CIRCLECI" ]; then
+              echo "❌ DOCKER_USERNAME_CIRCLECI is empty or not set!"
             else
-              echo "✅ DOCKER_USERNAME is set"
+              echo "✅ DOCKER_USERNAME_CIRCLECI is set"
             fi
             
-            if [ -z "$DOCKER_PASSWORD" ]; then
-              echo "❌ DOCKER_PASSWORD is empty or not set!"
+            if [ -z "$DOCKER_PASSWORD_CIRCLECI" ]; then
+              echo "❌ DOCKER_PASSWORD_CIRCLECI is empty or not set!"
             else
-              echo "✅ DOCKER_PASSWORD is set"
+              echo "✅ DOCKER_PASSWORD_CIRCLECI is set"
             fi
             
             echo "=== Testing Docker Login ==="
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "$DOCKER_PASSWORD_CIRCLECI" | docker login -u "$DOCKER_USERNAME_CIRCLECI" --password-stdin
             if [ $? -eq 0 ]; then
               echo "✅ Docker login successful!"
               docker logout
@@ -46,11 +45,11 @@ jobs:
       - run:
           name: Debug Docker credentials
           command: |
-            echo "DOCKER_USERNAME length: ${#DOCKER_USERNAME}"
-            echo "DOCKER_PASSWORD length: ${#DOCKER_PASSWORD}"
-            echo "DOCKER_USERNAME preview: ${DOCKER_USERNAME:0:4}***"
+            echo "DOCKER_USERNAME_CIRCLECI length: ${#DOCKER_USERNAME_CIRCLECI}"
+            echo "DOCKER_PASSWORD_CIRCLECI length: ${#DOCKER_PASSWORD_CIRCLECI}"
+            echo "DOCKER_USERNAME_CIRCLECI preview: ${DOCKER_USERNAME_CIRCLECI:0:4}***"
             
-            if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+            if [ -z "$DOCKER_USERNAME_CIRCLECI" ] || [ -z "$DOCKER_PASSWORD_CIRCLECI" ]; then
               echo "❌ Missing Docker credentials!"
               exit 1
             else
@@ -83,7 +82,7 @@ jobs:
           name: Login to Docker Hub
           command: |
             echo "Logging into Docker Hub..."
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "$DOCKER_PASSWORD_CIRCLECI" | docker login -u "$DOCKER_USERNAME_CIRCLECI" --password-stdin
             echo "✅ Docker login successful"
       
       - run:
